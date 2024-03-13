@@ -26,12 +26,17 @@ const (
 	DateTime
 )
 
-const exchangeTransaction = "Exchange"
-const transferToProWalletTransaction = "TransferToProWallet"
-const transferFromProWalletTransaction = "TransferFromProWallet"
-const exchangeDepositedOn = "ExchangeDepositedOn"
-const unlockingTermDeposit = "UnlockingTermDeposit"
-const lockingTermDeposit = "LockingTermDeposit"
+const exchangeTransaction = "Exchange" // input (-)
+const exchangeCashBack = "Exchange Cashback"
+const topUpCrypto = "Top up Crypto"
+const fixedTermInterest = "Fixed Term Interest"
+const depositToExchange = "Deposit To Exchange"
+const referralBonus = "Referral Bonus"
+const transferToProWalletTransaction = "Transfer To Pro Wallet" // input (-)
+const transferFromProWalletTransaction = "Transfer From Pro Wallet"
+const exchangeDepositedOn = "Exchange Deposited On"
+const unlockingTermDeposit = "Unlocking Term Deposit"
+const lockingTermDeposit = "Locking Term Deposit" // input (-)
 const dateLayoutCsv = "2006-01-02 15:04:05"
 const dateLayoutInput = "02-01-2006"
 
@@ -67,7 +72,7 @@ func main() {
 	var targetDate string
 
 	flag.StringVar(&filePath, "path", "nexo_transactions.csv", "Path to the transaction file")
-	flag.StringVar(&targetDate, "targetDate", "01-01-2023", "Date when to calculate the balance: Ex. 01-01-2023")
+	flag.StringVar(&targetDate, "targetDate", "01-01-2024", "Date when to calculate the balance: Ex. 01-01-2023")
 
 	// Parse the flags from the command line
 	flag.Parse()
@@ -123,12 +128,13 @@ func run(filePath string, targetDateStr string) {
 		if record.Date.After(targetDate) || record.Type == exchangeDepositedOn || record.Type == unlockingTermDeposit || record.Type == lockingTermDeposit {
 			continue
 		} else {
-			if record.Type == exchangeTransaction {
+			switch record.Type {
+			case exchangeTransaction:
 				addAmount(coinsWallet, record.InCoin, record.InAmount)
 				addAmount(coinsWallet, record.OutCoin, record.OutAmount)
-			} else if record.Type == transferToProWalletTransaction || record.Type == transferFromProWalletTransaction {
+			case transferToProWalletTransaction, lockingTermDeposit:
 				addAmount(coinsWallet, record.InCoin, record.InAmount)
-			} else {
+			default:
 				addAmount(coinsWallet, record.OutCoin, record.OutAmount)
 			}
 		}
@@ -145,7 +151,7 @@ func run(filePath string, targetDateStr string) {
 			totalInvestmentEuro += value
 			fmt.Printf("#%s: %f Eur\n", coin, value)
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(60 * time.Second)
 	}
 
 	fmt.Printf("Total investment in Euro the %s: %f Euro\n", targetDateStr, totalInvestmentEuro)
